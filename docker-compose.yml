@@ -9,7 +9,7 @@ volumes:
 
 services:
   servidor-config:
-    build: ./servidor-configuracion/servidor-config/
+    image: higinio01/shmultimedia:servidor-config
     restart: always
     container_name: servidor-config
     ports:
@@ -20,7 +20,7 @@ services:
       - mi-red
 
   servidor-eureka:
-    build: ./servidor-eureka/servidor-eureka/
+    image: higinio01/shmultimedia:servidor-eureka
     restart: always
     container_name: servidor-eureka
     environment:
@@ -33,7 +33,7 @@ services:
       - "8761:8761"
 
   servidor-gateway:
-    build: ./servidor-perimetral/servidor-gateway/
+    image: higinio01/shmultimedia:servidor-gateway
     restart: always
     container_name: servidor-gateway
     environment:
@@ -68,7 +68,7 @@ services:
       - mi-red
 
   microservicio-usuario:
-    build: ./microservicio-usuario/microservicio-usuario/
+    image: higinio01/shmultimedia:microservicio-usuario
     restart: always
     container_name: microservicio-usuario
     environment:
@@ -89,7 +89,7 @@ services:
       - mi-red
 
   microservicio-evento:
-      build: ./microservicio-evento/microservicio-evento/
+      image: higinio01/shmultimedia:microservicio-evento
       restart: always
       container_name: microservicio-evento
       environment:
@@ -110,7 +110,7 @@ services:
         - mi-red
 
   microservicio-notificacion:
-        build: ./microservicio-notificacion/microservicio-notificacion/
+        image: higinio01/shmultimedia:microservicio-notificacion
         restart: always
         container_name: microservicio-notificacion
         environment:
@@ -126,7 +126,7 @@ services:
           - mi-red
 
   cliente-usuario:
-        build: ./cliente-usuario/clienteUsuario/
+        image: higinio01/shmultimedia:cliente-usuario
         restart: always
         container_name: cliente-usuario
         environment:
