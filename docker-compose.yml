@@ -1,0 +1,145 @@
+version: '3.9'
+
+networks:
+  mi-red:
+
+volumes:
+  h2-usuarios:
+  h2-eventos:
+
+services:
+  servidor-config:
+    build: ./servidor-configuracion/servidor-config/
+    restart: always
+    container_name: servidor-config
+    ports:
+      - "8888:8888"
+    environment:
+      EUREKA_SERVER: servidor-eureka
+    networks:
+      - mi-red
+
+  servidor-eureka:
+    build: ./servidor-eureka/servidor-eureka/
+    restart: always
+    container_name: servidor-eureka
+    environment:
+      CONFIG_SERVER: servidor-config
+    depends_on:
+      - servidor-config
+    networks:
+      - mi-red
+    ports:
+      - "8761:8761"
+
+  servidor-gateway:
+    build: ./servidor-perimetral/servidor-gateway/
+    restart: always
+    container_name: servidor-gateway
+    environment:
+      CONFIG_SERVER: servidor-config
+      EUREKA_SERVER: servidor-eureka
+    depends_on:
+      - servidor-config
+      - servidor-eureka
+    networks:
+      - mi-red
+    ports:
+      - "8081:8081"
+
+  base-datos-usuario:
+    image: oscarfonts/h2
+    restart: always
+    environment:
+      H2_OPTIONS: "-tcp -tcpAllowOthers -tcpPort 9092 -ifNotExists"
+    volumes:
+      - h2-usuarios:/h2-data
+    networks:
+      - mi-red
+
+  base-datos-evento:
+    image: oscarfonts/h2
+    restart: always
+    environment:
+      H2_OPTIONS: "-tcp -tcpAllowOthers -tcpPort 9092 -ifNotExists"
+    volumes:
+      - h2-eventos:/h2-data
+    networks:
+      - mi-red
+
+  microservicio-usuario:
+    build: ./microservicio-usuario/microservicio-usuario/
+    restart: always
+    container_name: microservicio-usuario
+    environment:
+      DB_HOST: base-datos-usuario
+      DB_PORT: 9092
+      DB_NAME: test
+      DB_USERNAME: "sa"
+      DB_PASSWORD: ""
+      HOST_BD: "base-datos-usuario"
+      CONFIG_SERVER: servidor-config
+      EUREKA_SERVER: servidor-eureka
+    depends_on:
+      - servidor-config
+      - servidor-eureka
+      - servidor-gateway
+      - base-datos-usuario
+    networks:
+      - mi-red
+
+  microservicio-evento:
+      build: ./microservicio-evento/microservicio-evento/
+      restart: always
+      container_name: microservicio-evento
+      environment:
+        DB_HOST: base-datos-evento
+        DB_PORT: 9092
+        DB_NAME: test
+        DB_USERNAME: "sa"
+        DB_PASSWORD: ""
+        HOST_BD: "base-datos-evento"
+        CONFIG_SERVER: servidor-config
+        EUREKA_SERVER: servidor-eureka
+      depends_on:
+        - servidor-config
+        - servidor-eureka
+        - servidor-gateway
+        - base-datos-evento
+      networks:
+        - mi-red
+
+  microservicio-notificacion:
+        build: ./microservicio-notificacion/microservicio-notificacion/
+        restart: always
+        container_name: microservicio-notificacion
+        environment:
+          CONFIG_SERVER: servidor-config
+          EUREKA_SERVER: servidor-eureka
+        depends_on:
+          - servidor-config
+          - servidor-eureka
+          - servidor-gateway
+          - microservicio-usuario
+          - microservicio-evento
+        networks:
+          - mi-red
+
+  cliente-usuario:
+        build: ./cliente-usuario/clienteUsuario/
+        restart: always
+        container_name: cliente-usuario
+        environment:
+          CONFIG_SERVER: servidor-config
+          EUREKA_SERVER: servidor-eureka
+        depends_on:
+          - servidor-config
+          - servidor-eureka
+          - servidor-gateway
+          - microservicio-usuario
+          - microservicio-evento
+          - microservicio-notificacion
+        networks:
+          - mi-red
+        ports:
+          - "8181:8181"

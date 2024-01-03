@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>ProyectoFinal</title>
+    <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800&amp;display=swap">
+    <link rel="stylesheet" href="/assets/fonts/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/css/Bootstrap-4---Payment-Form.css">
+    <link rel="stylesheet" href="/assets/css/Bootstrap-4---Table-Fixed-Header.css">
+    <link rel="stylesheet" href="/assets/css/Data-Table-styles.css">
+    <link rel="stylesheet" href="/assets/css/Data-Table.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.6.5/css/buttons.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="/assets/css/Login-Form-Basic-icons.css">
+    <link rel="stylesheet" href="/assets/css/Ludens-Users---3-Profile.css">
+    <link rel="stylesheet" href="/assets/css/Table-With-Search-search-table.css">
+    <link rel="stylesheet" href="/assets/css/Table-With-Search.css">
+
+    <!-- Required scripts -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+</head>
+
+<body>
+    <section class="mt-4"></section>
+    <div th:replace="plantilla.html::menu"></div>
+<div id="app">
+    <div class="col-md-12 search-table-col"><span class="counter pull-right" ></span>
+
+        <select v-model="vistaSeleccionada" class="form-select" style="width: 200px; max-width: 100%;">
+            <option value="todo">Todo</option>
+            <option value="sinAsignar">Sin Asignar</option>
+            <option value="proximos">Próximos</option>
+            <option value="pasados">Pasados</option>
+            <option value="actuales">Actuales</option>
+            <option value="graficos">Gráficos</option>
+        </select>
+        <br>
+        <br>
+        <div class="table-responsive table table-hover table-bordered results" v-if="vistaSeleccionada !== 'graficos'">
+            <table class="table table-hover table-bordered">
+                <thead class="bill-header cs">
+                    <tr>
+                        <th id="trs-hd-1" class="col-lg-1"><span style="color: rgb(255, 255, 255);">Id</span></th>
+                        <th id="trs-hd-2" class="col-lg-2"><span style="color: rgb(255, 255, 255);">Servicios</span></th>
+                        <th id="trs-hd-3" class="col-lg-1"><span style="color: rgb(255, 255, 255);">Fecha Compra</span></th>
+                        <th id="trs-hd-4" class="col-lg-1"><span style="color: rgb(255, 255, 255);">Fecha Servicio</span></th>
+                        <th id="trs-hd-5" class="col-lg-2"><span style="color: rgb(255, 255, 255);">Encargado</span></th>
+                        <th id="trs-hd-6" class="col-lg-2"><span style="color: rgb(255, 255, 255);">Cliente</span></th>
+                        <th id="trs-hd-7" class="col-lg-2"><span style="color: rgb(255, 255, 255);">Monto</span></th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="warning no-result">
+                        <td colspan="12"><i class="fa fa-warning"></i>&nbsp; No Result !!!</td>
+                    </tr>
+                    <tr v-for="compra in comprasFiltradas">
+                        <td><span style="color: rgb(255, 255, 255);">{{compra.id}}</span></td>
+                        <td><span style="color: rgb(255, 255, 255);">{{ servicios(compra.tipoEvento, compra.incluirVideo) }}</span></td>
+                        <td><span style="color: rgb(255, 255, 255);">{{compra.fechaPago}}</span></td>
+                        <td><span style="color: rgb(255, 255, 255);">{{compra.fechaEvento}}</span></td>
+<!--                        <td><span style="color: rgb(255, 255, 255);">{{ nombresDeUsuarios[compra.idEncargado] || 'Cargando...' }}</span></td>-->
+                        <td>
+                            <span style="color: rgb(255, 255, 255);">
+                                {{ nombresDeUsuarios[compra.idEncargado] }}
+                            </span>
+                            <button v-if="compra.idEncargado === 0" @click="asignarEvento(compra.id)" class="btn btn-primary btn-sm">Asignarme</button>
+                        </td>
+                        <td><span style="color: rgb(255, 255, 255);">{{ nombresDeClientes[compra.idCliente] || 'Cargando...' }}</span></td>
+                        <td><span style="color: rgb(255, 255, 255);">{{compra.total}}</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+    </div>
+    <div v-if="vistaSeleccionada === 'graficos'">
+        <div class="charts-container" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap;">
+            <div class="chart-container" style="flex: 1; min-width: 40vw; height: 40vh;">
+                <canvas id="graficoCompras"></canvas>
+            </div>
+            <div class="chart-container" style="flex: 1; min-width: 40vw; height: 40vh;">
+                <canvas id="graficoComprasSemanales"></canvas>
+            </div>
+        </div>
+        <div class="chart-container" style="position: relative; height:40vh; width:80vw">
+            <canvas id="graficoSolicitudes"></canvas>
+        </div>
+    </div>
+    <br>
+    <br>
+    <br>
+    <br>
+
+</div>
+    <script src="/assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/assets/js/bs-init.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.6.0/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.5/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.5/js/buttons.flash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.5/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.5/js/buttons.print.min.js"></script>
+    <script src="/assets/js/DataTable---Fully-BSS-Editable-style.js"></script>
+    <script src="/assets/js/bold-and-dark.js"></script>
+    <script src="/assets/js/Bootstrap-4---Payment-Form-script.js"></script>
+    <script src="/assets/js/Table-With-Search-search-table.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+
+    <!-- Libreria Vuejs -->
+    <script>
+
+        /**
+         * En caso de utilizar con API diferentes al dominio indicar la URL.
+         */
+        const NOMBRE_KEY = "API_URL";
+        if(localStorage.getItem(NOMBRE_KEY) == null){
+            localStorage.setItem(NOMBRE_KEY, "http://localhost:8081")
+        }
+        const URL_API = localStorage.getItem(NOMBRE_KEY);
+
+        const { createApp } = Vue;
+
+        const app = createApp({
+
+            data(){
+                return {
+                   // vistaActual: 'clientes',
+                    titulo: "Creación de Estudiante",
+                    editando: false,
+                    compras: [],
+                    modal: "",
+                    nombresDeUsuarios: {},
+                    nombresDeClientes: {},
+                    vistaSeleccionada: 'actuales',
+
+                }
+            },
+            computed: {
+                comprasFiltradas() {
+                    const hoy = new Date().toISOString().split('T')[0];
+                    console.log(hoy);
+                    switch (this.vistaSeleccionada) {
+                        case 'todo':
+                            return this.compras;
+                        case 'sinAsignar':
+                            return this.compras.filter(compra => compra.idEncargado === 0);
+                        case 'proximos':
+                            return this.compras.filter(compra => compra.fechaEvento > hoy);
+                        case 'pasados':
+                            return this.compras.filter(compra => compra.fechaEvento < hoy);
+                        case 'actuales':
+                            return this.compras.filter(compra => compra.fechaEvento === hoy);
+                        default:
+                            return this.compras;
+                    }
+                }
+            },
+
+            mounted() {
+                console.log("Iniciando la aplicación en mounted: "+this.titulo);
+                this.$nextTick(function () {  //garantizo que todos los elementos están renderizados.
+                    console.log("Cargando todo el render del proyecto");
+                    this.listaCompras();
+
+                    this.modal = new bootstrap.Modal(document.getElementById('modal-1'));
+                });
+            },
+
+            watch: {
+                vistaSeleccionada(newVal) {
+                    if (newVal === 'graficos') {
+                        this.inicializarGraficos();
+                    }
+                }
+            },
+
+            methods: {
+
+                inicializarGraficos() {
+                    this.$nextTick(() => {
+                        this.inicializarGraficoCompras();
+                        this.inicializarGraficoSolicitudes();
+                        this.inicializarGraficoComprasSemanales();
+
+                    });
+                },
+                inicializarGraficoComprasSemanales() {
+                    const ctx = document.getElementById('graficoComprasSemanales').getContext('2d');
+                    const datosComprasSemanales = this.procesarDatosComprasSemanales();
+
+                    const graficoComprasSemanales = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                            datasets: [{
+                                label: 'Compras por día',
+                                data: datosComprasSemanales,
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 2,
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Compras por cada día de la semana',
+                                    font: {
+                                        size: 18
+                                    },
+                                    padding: {
+                                        top: 10,
+                                        bottom: 30
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                procesarDatosComprasSemanales() {
+                    // Obtener la fecha actual y el primer día de la semana (domingo)
+                    const hoy = new Date();
+                    const primerDiaSemana = new Date(hoy.setDate(hoy.getDate() - hoy.getDay() - 1));
+
+                    // Inicializar el conteo de compras para cada día de la semana
+                    let comprasSemanales = Array(7).fill(0);
+
+                    this.compras.forEach(compra => {
+                        const fechaCompra = new Date(compra.fechaPago);
+                        const diferenciaDias = (fechaCompra - primerDiaSemana) / (1000 * 3600 * 24);
+                        if (diferenciaDias >= 0 && diferenciaDias < 7) {
+                            comprasSemanales[Math.floor(diferenciaDias)]++;
+                        }
+                    });
+
+                    return comprasSemanales;
+                },
+
+                inicializarGraficoCompras() {
+                    const ctx = document.getElementById('graficoCompras').getContext('2d');
+                    const datosCompras = this.procesarDatosCompras();
+
+                    const graficoCompras = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Pre-Boda', 'Boda', 'Cumpleaños', 'Video de evento'],
+                            datasets: [{
+                                label: 'Número de compras por servicio',
+                                data: datosCompras,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)',
+                                    'rgba(255, 206, 86, 0.2)',
+                                    'rgba(75, 192, 192, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Compras por tipo de evento',
+                                    font: {
+                                        size: 18
+                                    },
+                                    padding: {
+                                        top: 10,
+                                        bottom: 30
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                procesarDatosCompras() {
+                    const conteoCompras = { 'Pre-Boda': 0, 'Boda': 0, 'Cumpleaños': 0, 'Video de evento': 0 };
+
+                    this.compras.forEach(compra => {
+                        if (conteoCompras.hasOwnProperty(compra.tipoEvento)) {
+                            conteoCompras[compra.tipoEvento]++;
+                        }
+                        if (compra.incluirVideo) {
+                            conteoCompras['Video de evento']++;
+                        }
+                    });
+
+                    return Object.values(conteoCompras);
+                },
+
+                procesarDatosSolicitudes() {
+                    let solicitudesPendientes = 0;
+                    let solicitudesAsignadas = 0;
+
+                    this.compras.forEach(compra => {
+                        if (compra.idEncargado === 0) {
+                            solicitudesPendientes++;
+                        } else {
+                            solicitudesAsignadas++;
+                        }
+                    });
+
+                    return [solicitudesPendientes, solicitudesAsignadas];
+                },
+
+                inicializarGraficoSolicitudes() {
+                    const ctx = document.getElementById('graficoSolicitudes').getContext('2d');
+                    const [solicitudesPendientes, solicitudesAsignadas] = this.procesarDatosSolicitudes();
+
+                    const graficoSolicitudes = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Solicitudes Pendientes', 'Solicitudes Asignadas'],
+                            datasets: [{
+                                label: 'Solicitudes',
+                                data: [solicitudesPendientes, solicitudesAsignadas],
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Solicitudes pendientes',
+                                    font: {
+                                        size: 18
+                                    },
+                                    padding: {
+                                        top: 10,
+                                        bottom: 30
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+
+                obtenerIdUsuarioActual() {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        const decoded = jwt_decode(token);
+                        return decoded.idUser;
+                    }
+                    return null;
+                },
+                asignarEvento(eventoId) {
+                    const userId = this.obtenerIdUsuarioActual();
+                    if (!userId) {
+                        alert("Usuario no identificado");
+                        return;
+                    }
+
+                    // Encuentra el evento que se va a actualizar
+                    const eventoParaActualizar = this.compras.find(evento => evento.id === eventoId);
+                    if (!eventoParaActualizar) {
+                        alert("Evento no encontrado");
+                        return;
+                    }
+
+                    // Actualiza el idEncargado del evento
+                    const eventoActualizado = { ...eventoParaActualizar, idEncargado: userId };
+
+                    const url = `${URL_API}/evento/${eventoId}`;
+                    axios.put(url, eventoActualizado).then(response => {
+                        console.log('Encargado asignado con éxito');
+                        this.listaCompras();
+                    }).catch(error => {
+                        console.error("Error al asignar el evento: ", error);
+                    });
+                },
+
+                listaCompras() {
+                    const url = `${URL_API}/evento`;
+                    axios.get(url).then(response => {
+                        this.compras = response.data;
+                        this.compras.forEach(compra => {
+                            this.obtenerNombreUsuario(compra.idEncargado);
+                        });
+                        this.compras.forEach(compra => {
+                            this.obtenerNombreCliente(compra.idCliente);
+                        });
+                    }).catch(error => {
+                        console.error("Error al cargar la lista de compras: ", error);
+                    });
+                },
+
+
+                servicios(tipoEvento, video) {
+                    if (video == true) {
+                        return `${tipoEvento} + Video Evento`;
+                    }
+                    return tipoEvento;
+                },
+
+                obtenerNombreUsuario(idUser) {
+                    if (!this.nombresDeUsuarios[idUser]) { // Verificar si ya se cargó el nombre
+                        const url = `${URL_API}/user/${idUser}`;
+                        axios.get(url).then(response => {
+                            this.nombresDeUsuarios[idUser] = `${response.data.nombre} ${response.data.apellido}`;
+                        }).catch(error => {
+                            console.error("Error al obtener el nombre del usuario: ", error);
+                        });
+                    }
+                },
+
+                obtenerNombreCliente(idUser) {
+                    if (!this.nombresDeClientes[idUser]) { // Verificar si ya se cargó el nombre
+                        const url = `${URL_API}/user/${idUser}`;
+                        axios.get(url).then(response => {
+                            this.nombresDeClientes[idUser] = `${response.data.nombre} ${response.data.apellido}`;
+                        }).catch(error => {
+                            console.error("Error al obtener el nombre del usuario: ", error);
+                        });
+                    }
+                },
+
+
+            }
+        });
+
+        /**
+         *
+         */
+        app.mount('#app');
+
+
+    </script>
+</body>
+
+</html>
